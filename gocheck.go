@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"strconv"
-	"log"
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
-	"net/http"
 	//"encoding/json"
 )
 
@@ -16,10 +16,9 @@ import (
 *  `-http` is selected by default
 *  $ gocheck [-http|-net] [options]
 *
-*  checking redirect works, 
-*  $ gocheck --host follow youtube.com --httpOkStatusCode 301 --httpOkStatusCode 302 
-*/
-
+*  checking redirect works,
+*  $ gocheck --host follow youtube.com --httpOkStatusCode 301 --httpOkStatusCode 302
+ */
 
 // main flags
 var subCmd = flag.String("subCmd", "http", "the subcommand")
@@ -37,35 +36,34 @@ var httpOkResponseTime = flag.String("httpOkResponseTime", "1s", "ok time")
 var httpWarnResponseTime = flag.String("httpWarnResponseTime", "2s", "warn time")
 var httpErrorResponseTime = flag.String("httpErrorResponseTime", "3s", "error time")
 
-
-// new type for httpStatusCodes, a slice of strings 
+// new type for httpStatusCodes, a slice of strings
 // to be used by OK, WARN, ERROR statements
 type httpStatusCodes []string
+
 // two flag.Value interface methods required:
 // (1) flag String() string
 func (s *httpStatusCodes) String() string {
-    return fmt.Sprint(*s)
+	return fmt.Sprint(*s)
 }
+
 // (2) flag Set(value string) error
 func (s *httpStatusCodes) Set(value string) error {
-    // if httpStatusCodes given contains a comma, split value
-    ss := strings.Split(value, ",")
-    *s = append(*s, ss...) // "..." as suffice in order to append slice into another
-    return nil
+	// if httpStatusCodes given contains a comma, split value
+	ss := strings.Split(value, ",")
+	*s = append(*s, ss...) // "..." as suffice in order to append slice into another
+	return nil
 }
+
 // variables from new type
 var httpOkStatusCodes httpStatusCodes
 var httpWarnStatusCodes httpStatusCodes
 var httpErrorStatusCodes httpStatusCodes
 
-
-
-// Wrapper for time tracking 
+// Wrapper for time tracking
 func timeTrack(start time.Time, name string) {
-    elapsed := time.Since(start)
-    log.Printf("%s took %s", name, elapsed)
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -81,19 +79,18 @@ func timeTrack(start time.Time, name string) {
 /////    /////          /////                 /////          /////
 /////    /////          /////                 /////          /////
 
-
 /////  ///  ///  /////  /////  //  //
 //     ///  ///  //     //     // //
 //     ////////  ///    //     ////
 //     ///  ///  //     //     // //
-/////  ///  ///  /////  /////  //  //   //   //  //   //     // 
-
+/////  ///  ///  /////  /////  //  //   //   //  //   //     //
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-// Check HTTP 
+// Check HTTP
 func checkHttp() {
+	// Set func time tracker
 	defer timeTrack(time.Now(), "checkHttp")
 
 	// Set default parameters (chuck)
@@ -102,34 +99,40 @@ func checkHttp() {
 		*header = "api.chucknorris.io"
 	}
 
-	// If no header was passed, set to host
-	if *header == "" {
-		*header = *host
-	}
-
 	// Setting client options
 	tran := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    10 * time.Second,
 		DisableCompression: true,
-        }
+	}
 	client := &http.Client{
 		Transport: tran,
-		Timeout: 10 * time.Second,
+		Timeout:   10 * time.Second,
 		// Uncomment to not follow redirects - TODO -make bool option
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
 
+	// If no header was passed, set to host
+	if *header == "" {
+		*header = *host
+	}
+
 	// Setting host header to a request
-	req, err := http.NewRequest("GET", "https://" + *host + *url, nil)
+	req, err := http.NewRequest("GET", "https://"+*host+*url, nil)
 	req.Header.Set("Host", *header)
 
-	// http client request using golang client.Do
+	// Start Timer for Http Request
 	startTime := time.Now()
+
+	// http client request using golang client.Do
 	resp, err := client.Do(req)
+
+	// End Timer for Http Request
 	respTime := time.Since(startTime)
+
+	// http error handling needs work
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -141,29 +144,31 @@ func checkHttp() {
 		log.Fatalln(err)
 	}
 
+	// Start Status Code Check //
+
 	// Check if httpStatusCodes were provided, otherwise set default.
 	if httpOkStatusCodes == nil {
-                if (*verbose) { log.Println("no httpOkStatusCode value was provided; set default to `200`") }
+		if *verbose {
+			log.Println("no httpOkStatusCode value was provided; set default to `200`")
+		}
 		httpOkStatusCodes = append(httpOkStatusCodes, "200")
 	}
 	if httpWarnStatusCodes == nil {
-                if (*verbose) { log.Println("no httpWarnStatusCode value was provided; set default to `400`") }
+		if *verbose {
+			log.Println("no httpWarnStatusCode value was provided; set default to `400`")
+		}
 		httpWarnStatusCodes = append(httpWarnStatusCodes, "400")
 	}
 	if httpErrorStatusCodes == nil {
-                if (*verbose) { log.Println("no httpErrorStatusCode value was provided; set default to `500`") }
+		if *verbose {
+			log.Println("no httpErrorStatusCode value was provided; set default to `500`")
+		}
 		httpErrorStatusCodes = append(httpErrorStatusCodes, "500")
 	}
 
+	// End Status Code Check //
 
-       //////        //////
-       //   //////////   //
-       //////        //////
-               ////
-                //
-
-	     ////////
-
+	// Start Response Time Check //
 
 	// Convert response statusCode from int to string
 	statusCodeString := strconv.Itoa(resp.StatusCode)
@@ -185,7 +190,6 @@ func checkHttp() {
 		httpCheckStatusCode = "unknown"
 	}
 
-
 	// Set responseTime in Duration type to be compared
 	okResponseTime, _ := time.ParseDuration(*httpOkResponseTime)
 	warnResponseTime, _ := time.ParseDuration(*httpWarnResponseTime)
@@ -203,8 +207,9 @@ func checkHttp() {
 		httpCheckResponseTime = "unknown"
 	}
 
+	// End Response Time Check //
 
-
+	// Logging Below //
 
 	// Status Code Check Out
 	log.Println("status codes `ok`:", httpOkStatusCodes)
@@ -220,13 +225,13 @@ func checkHttp() {
 
 	// Print checkHttp ouput
 	log.Println("target:", *host)
-	log.Println("header:", *header + *url)
+	log.Println("header:", *header+*url)
 	log.Println("status:", resp.Status)
 	log.Println("status code:", resp.StatusCode)
 	log.Println("response time:", respTime)
 	log.Println("protocol:", resp.Proto)
 	log.Println("content length:", resp.ContentLength)
-	if (*verbose) {
+	if *verbose {
 		log.Println("request:", resp.Request)
 		log.Println("header:", resp.Header)
 		log.Println("Body:", string(body))
@@ -240,26 +245,25 @@ func checkNet() {
 	log.Println("check net to do:\n- dns\n- icmp\n- nmap scan\n")
 }
 
-
 func main() {
 	// Parse variables that require new type to be defined
 	// Note to self: was unable to define directly into var, thus cannot be outside func
-        flag.Var(&httpOkStatusCodes, "httpOkStatusCodes", "http | status codes to `ok` on")
+	flag.Var(&httpOkStatusCodes, "httpOkStatusCodes", "http | status codes to `ok` on")
 	flag.Var(&httpWarnStatusCodes, "httpWarnStatusCodes", "http | status codes to `warn` on")
 	flag.Var(&httpErrorStatusCodes, "httpErrorStatusCodes", "http | status codes to `error` on")
 
 	flag.Parse()
 
 	// showing user selected options
-	log.Println("Running '"+ *subCmd + "' mode...")
+	log.Println("Running '" + *subCmd + "' mode...")
 
 	// showing force was selected
-	if (*force) {
+	if *force {
 		log.Println("\nforce selected!\n")
 	}
 
 	// execute check
-        switch *subCmd {
+	switch *subCmd {
 	case "http":
 		checkHttp()
 	case "net":

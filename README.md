@@ -1,7 +1,8 @@
 # gocheck
 Check HTTP
 
-# gocheck defaults
+## gocheck defaults
+
     gocheck]$ go run gocheck.go 
     2019/12/02 21:16:44 Running 'http' mode...
     2019/12/02 21:16:45 status codes `ok`: [200]
@@ -21,7 +22,8 @@ Check HTTP
     2019/12/02 21:16:45 content length: -1
     2019/12/02 21:16:45 checkHttp took 1.20051962s
   
-# gocheck w/ Arg's to check a redirect
+## gocheck w/ Arg's to check a redirect
+
     gocheck]$ go run gocheck.go -host youtube.com -httpOkStatusCodes=301,302 
     2019/12/02 21:19:36 Running 'http' mode...
     2019/12/02 21:19:37 status codes `ok`: [301 302]
@@ -40,3 +42,24 @@ Check HTTP
     2019/12/02 21:19:37 protocol: HTTP/2.0
     2019/12/02 21:19:37 content length: 0
     2019/12/02 21:19:37 checkHttp took 185.554812ms
+
+## gocheck with Host Header set and Url
+
+    gocheck]$ go run gocheck.go -host www.google.com -httpOkResponseTime=300ms -httpWarnResponseTime=500ms -header=www.example.com -url /crazycat -httpWarnStatusCodes=400,404,403
+    2019/12/02 21:32:13 Running 'http' mode...
+    2019/12/02 21:32:13 status codes `ok`: [200]
+    2019/12/02 21:32:13 status codes `warn`: [400 404 403]
+    2019/12/02 21:32:13 status codes `error`: [500]
+    2019/12/02 21:32:13 status code check result: warn
+    2019/12/02 21:32:13 response time `ok`: 300ms
+    2019/12/02 21:32:13 response time `warn`: 500ms
+    2019/12/02 21:32:13 response time `error`: 3s
+    2019/12/02 21:32:13 response time check result: ok
+    2019/12/02 21:32:13 target: www.google.com
+    2019/12/02 21:32:13 header: www.example.com/crazycat
+    2019/12/02 21:32:13 status: 404 Not Found
+    2019/12/02 21:32:13 status code: 404
+    2019/12/02 21:32:13 response time: 175.987496ms
+    2019/12/02 21:32:13 protocol: HTTP/2.0
+    2019/12/02 21:32:13 content length: 1569
+    2019/12/02 21:32:13 checkHttp took 176.212958ms

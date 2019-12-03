@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	//"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -216,19 +217,19 @@ func checkHttp() {
 	log.Println("status codes `warn`:", httpWarnStatusCodes)
 	log.Println("status codes `error`:", httpErrorStatusCodes)
 	log.Println("status code check result:", httpCheckStatusCode)
+	log.Println("status code:", resp.StatusCode)
+	log.Println("status:", resp.Status)
 
 	// Response Time Check Out
 	log.Println("response time `ok`:", okResponseTime)
 	log.Println("response time `warn`:", warnResponseTime)
 	log.Println("response time `error`:", errorResponseTime)
 	log.Println("response time check result:", httpCheckResponseTime)
+	log.Println("response time:", respTime)
 
 	// Print checkHttp ouput
 	log.Println("target:", *host)
 	log.Println("header:", *header+*url)
-	log.Println("status:", resp.Status)
-	log.Println("status code:", resp.StatusCode)
-	log.Println("response time:", respTime)
 	log.Println("protocol:", resp.Proto)
 	log.Println("content length:", resp.ContentLength)
 	if *verbose {
@@ -239,10 +240,34 @@ func checkHttp() {
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+/////     /////   ////////////////  //////////////////
+//////    /////   ///////////////   ////////////////
+///////   /////    /////                 /////
+////////  /////     /////                /////
+///////// /////    //////////            /////
+////  /////////     ///////              /////
+////   ////////    /////                 /////
+////    ///////    ////                  /////
+////     //////    //////////////        /////
+////      /////    //////////////        /////
+
+/////  ///  ///  /////  /////  //  //
+//     ///  ///  //     //     // //
+//     ////////  ///    //     ////
+//     ///  ///  //     //     // //
+/////  ///  ///  /////  /////  //  //   //   //  //   //     //
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
 // Check Network
 func checkNet() {
 	defer timeTrack(time.Now(), "checkNet")
 	log.Println("check net to do:\n- dns\n- icmp\n- nmap scan\n")
+
 }
 
 func main() {

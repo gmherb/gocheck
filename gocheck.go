@@ -90,9 +90,9 @@ func timeTrack(start time.Time, name string) {
 //////////////////////////////////////////////////////////////////////////////
 
 // Check HTTP
-func checkHttp() {
+func checkHTTP() {
 	// Set func time tracker
-	defer timeTrack(time.Now(), "checkHttp")
+	defer timeTrack(time.Now(), "checkHTTP")
 
 	// Set default parameters (chuck)
 	if *host == "api.chucknorris.io" {
@@ -124,13 +124,9 @@ func checkHttp() {
 	req, err := http.NewRequest("GET", "https://"+*host+*url, nil)
 	req.Header.Set("Host", *header)
 
-	// Start Timer for Http Request
+	// http client request using client.Do and wrapping with Time for metrics
 	startTime := time.Now()
-
-	// http client request using golang client.Do
 	resp, err := client.Do(req)
-
-	// End Timer for Http Request
 	respTime := time.Since(startTime)
 
 	// http error handling needs work
@@ -146,7 +142,6 @@ func checkHttp() {
 	}
 
 	// Start Status Code Check //
-
 	// Check if httpStatusCodes were provided, otherwise set default.
 	if httpOkStatusCodes == nil {
 		if *verbose {
@@ -166,11 +161,9 @@ func checkHttp() {
 		}
 		httpErrorStatusCodes = append(httpErrorStatusCodes, "500")
 	}
-
 	// End Status Code Check //
 
 	// Start Response Time Check //
-
 	// Convert response statusCode from int to string
 	statusCodeString := strconv.Itoa(resp.StatusCode)
 
@@ -207,12 +200,10 @@ func checkHttp() {
 	} else {
 		httpCheckResponseTime = "unknown"
 	}
-
 	// End Response Time Check //
 
 	// Logging Below //
-
-	// Status Code Check Out
+	// Status Code Check
 	log.Println("status codes `ok`:", httpOkStatusCodes)
 	log.Println("status codes `warn`:", httpWarnStatusCodes)
 	log.Println("status codes `error`:", httpErrorStatusCodes)
@@ -220,14 +211,14 @@ func checkHttp() {
 	log.Println("status code:", resp.StatusCode)
 	log.Println("status:", resp.Status)
 
-	// Response Time Check Out
+	// Response Time Check
 	log.Println("response time `ok`:", okResponseTime)
 	log.Println("response time `warn`:", warnResponseTime)
 	log.Println("response time `error`:", errorResponseTime)
 	log.Println("response time check result:", httpCheckResponseTime)
 	log.Println("response time:", respTime)
 
-	// Print checkHttp ouput
+	// General checkHTTP
 	log.Println("target:", *host)
 	log.Println("header:", *header+*url)
 	log.Println("protocol:", resp.Proto)
@@ -264,10 +255,9 @@ func checkHttp() {
 //////////////////////////////////////////////////////////////////////////////
 
 // Check Network
-func checkNet() {
+func checkNET() {
 	defer timeTrack(time.Now(), "checkNet")
-	log.Println("check net to do:\n- dns\n- icmp\n- nmap scan\n")
-
+	log.Println("check net to do includes dns, checks, portscan, connection tests, etc")
 }
 
 func main() {
@@ -284,15 +274,15 @@ func main() {
 
 	// showing force was selected
 	if *force {
-		log.Println("\nforce selected!\n")
+		log.Println("force selected!")
 	}
 
 	// execute check
 	switch *subCmd {
 	case "http":
-		checkHttp()
+		checkHTTP()
 	case "net":
 		log.Println("Could it be, that `net` mode is not done yet.!?")
-		checkNet()
+		checkNET()
 	}
 }

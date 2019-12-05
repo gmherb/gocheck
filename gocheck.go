@@ -226,9 +226,9 @@ func checkHTTP() {
 	// General checkHTTP
 	log.Println("target:", *host)
 	log.Println("header:", *header+*url)
-	log.Println("protocol:", resp.Proto)
-	log.Println("content length:", resp.ContentLength)
 	if *verbose {
+		log.Println("protocol:", resp.Proto)
+		log.Println("content length:", resp.ContentLength)
 		log.Println("request:", resp.Request)
 		log.Println("header:", resp.Header)
 		log.Println("Body:", string(body))
@@ -237,8 +237,14 @@ func checkHTTP() {
 
 	// Parse Json
 	if defaultHost {
-		jsonTest := gojsonq.New().FromString(string(body)).Find("value")
-		log.Println("jsonTest:", jsonTest)
+		chuck := gojsonq.New().FromString(string(body)).Find("value")
+		chuckId := gojsonq.New().FromString(string(body)).Find("id")
+		chuckUrl := gojsonq.New().FromString(string(body)).Find("url")
+		chuckAt := gojsonq.New().FromString(string(body)).Find("updated_at")
+		log.Println("chuck id:", chuckId)
+		log.Println("chuck url:", chuckUrl)
+		log.Println("chuck:", chuck)
+		log.Println("updated at:", chuckAt)
 	}
 
 }

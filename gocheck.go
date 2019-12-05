@@ -3,14 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/thedevsaddam/gojsonq"
+	"golang.org/x/net/icmp"
+	"golang.org/x/net/ipv4"
 	"io/ioutil"
 	"log"
-	//"net"
+	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
-	//"encoding/json"
 )
 
 /*
@@ -95,9 +98,11 @@ func checkHTTP() {
 	defer timeTrack(time.Now(), "checkHTTP")
 
 	// Set default parameters (chuck)
+	var defaultHost bool = false
 	if *host == "api.chucknorris.io" {
 		*url = "/jokes/random"
 		*header = "api.chucknorris.io"
+		defaultHost = true
 	}
 
 	// Setting client options
@@ -229,6 +234,13 @@ func checkHTTP() {
 		log.Println("Body:", string(body))
 		log.Println("trailer:", resp.Trailer)
 	}
+
+	// Parse Json
+	if defaultHost {
+		jsonTest := gojsonq.New().FromString(string(body)).Find("value")
+		log.Println("jsonTest:", jsonTest)
+	}
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -258,6 +270,59 @@ func checkHTTP() {
 func checkNET() {
 	defer timeTrack(time.Now(), "checkNet")
 	log.Println("check net to do includes dns, checks, portscan, connection tests, etc")
+
+	icmpCon, err := icmp.ListenPacket("udp4", "0.0.0.0")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer icmpCon.Close()
+	log.Println("ICMP Connection:*", *icmpCon)
+	log.Println("ICMP Connection:", icmpCon)
+
+	icmpLocalAddr := icmpCon.LocalAddr()
+	log.Println("Local Addr:", icmpLocalAddr)
+
+	icmpMes := icmp.Message{
+		Type: ipv4.ICMPTypeEcho,
+		Code: 0,
+		Body: &icmp.Echo{
+			ID:   os.Getpid() & 0xffff,
+			Seq:  1,
+			Data: []byte("PING-PONG-BONG-MONG"),
+		},
+	}
+	log.Println("ICMP Message:", icmpMes)
+
+	icmpMesMar, err := icmpMes.Marshal(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("ICMP Message Marshal:", icmpMesMar)
+
+	icmpPing, err := icmpCon.WriteTo(icmpMesMar, &net.UDPAddr{IP: net.ParseIP("8.8.8.8"), Port: 0})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("ICMP Ping:", icmpPing)
+
+	fluff := make([]byte, 1500)
+	n, target, err := icmpCon.ReadFrom(fluff)
+	if err != nil {
+		log.Fatal(err)
+	}
+	icmpResponse, err := icmp.ParseMessage(1, fluff[:n])
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("ICMP Response:", icmpResponse)
+
+	switch icmpResponse.Type {
+	case ipv4.ICMPTypeEchoReply:
+		log.Printf("response received from %v", target)
+	default:
+		log.Printf("%+v recieved from target", icmpResponse)
+	}
+
 }
 
 func main() {

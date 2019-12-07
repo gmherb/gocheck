@@ -3,9 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/thedevsaddam/gojsonq"
-	"golang.org/x/net/icmp"
-	"golang.org/x/net/ipv4"
 	"io/ioutil"
 	"log"
 	"net"
@@ -14,6 +11,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/thedevsaddam/gojsonq"
+	"golang.org/x/net/icmp"
+	"golang.org/x/net/ipv4"
 )
 
 /*

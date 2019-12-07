@@ -41,6 +41,10 @@ var httpOkResponseTime = flag.String("httpOkResponseTime", "1s", "ok time")
 var httpWarnResponseTime = flag.String("httpWarnResponseTime", "2s", "warn time")
 var httpErrorResponseTime = flag.String("httpErrorResponseTime", "3s", "error time")
 
+// net mode flags
+var netTimeout = flag.String("netTimeout", "3s", "timeout for net mode")
+var netPort = flag.String("netPort", "80", "port to connect to")
+
 // new type for httpStatusCodes, a slice of strings
 // to be used by OK, WARN, ERROR statements
 type httpStatusCodes []string
@@ -322,25 +326,43 @@ func checkNET() {
 		log.Println("ICMP Ping:", icmpPing)
 	}
 
+	ito, err := time.ParseDuration(*netTimeout)
+	if err != nil {
+		log.Fatal(err)
+	}
+	icmpConTimeout := icmpCon.SetDeadline(time.Now().Add(ito))
+	if *verbose {
+		log.Println("ICMP Timeout:", icmpConTimeout)
+	}
+
 	fluff := make([]byte, 1500)
 	n, target, err := icmpCon.ReadFrom(fluff)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("ICMP Response:", n, target)
+
 	icmpResponse, err := icmp.ParseMessage(1, fluff[:n])
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	if *verbose {
 		log.Println("ICMP Response:", icmpResponse)
 	}
 
 	switch icmpResponse.Type {
 	case ipv4.ICMPTypeEchoReply:
-		log.Printf("ICMP response received from %v", target)
+		log.Println("ICMP response received from", target, "recieved", icmpResponse.Type)
 	default:
-		log.Printf("%+v recieved from target", icmpResponse)
+		log.Println("ICMP response NOT received from", target, "recieved", icmpResponse.Type)
+	}
+
+	conn, err := net.Dial("tcp", *host+":"+*netPort)
+	if err != nil {
+		log.Fatal(err) // handle error
+	}
+	if *verbose {
+		log.Println("Tcp Connection:", conn)
 	}
 
 }

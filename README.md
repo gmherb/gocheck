@@ -2,26 +2,27 @@
 Check HTTP
 
 ## gocheck defaults
+	gocheck]$ go run gocheck.go
+	2019/12/05 01:13:39 Running 'http' mode...
+	2019/12/05 01:13:40 status codes `ok`: [200]
+	2019/12/05 01:13:40 status codes `warn`: [400]
+	2019/12/05 01:13:40 status codes `error`: [500]
+	2019/12/05 01:13:40 status code check result: ok
+	2019/12/05 01:13:40 status code: 200
+	2019/12/05 01:13:40 status: 200 OK
+	2019/12/05 01:13:40 response time `ok`: 1s
+	2019/12/05 01:13:40 response time `warn`: 2s
+	2019/12/05 01:13:40 response time `error`: 3s
+	2019/12/05 01:13:40 response time check result: ok
+	2019/12/05 01:13:40 response time: 855.545648ms
+	2019/12/05 01:13:40 target: api.chucknorris.io
+	2019/12/05 01:13:40 header: api.chucknorris.io/jokes/random
+	2019/12/05 01:13:40 chuck id: 8plI-Z3IQoCmEcRV1vSYvw
+	2019/12/05 01:13:40 chuck url: https://api.chucknorris.io/jokes/8plI-Z3IQoCmEcRV1vSYvw
+	2019/12/05 01:13:40 chuck: when you play COD with chuck Norris the escape button doesn't work! No one can escape from Chuck Norris.
+	2019/12/05 01:13:40 updated at: 2016-05-01 10:51:41.584544
+	2019/12/05 01:13:40 checkHTTP took 855.862645ms
 
-    gocheck]$ go run gocheck.go 
-    2019/12/02 21:16:44 Running 'http' mode...
-    2019/12/02 21:16:45 status codes `ok`: [200]
-    2019/12/02 21:16:45 status codes `warn`: [400]
-    2019/12/02 21:16:45 status codes `error`: [500]
-    2019/12/02 21:16:45 status code check result: ok
-    2019/12/02 21:16:45 response time `ok`: 1s
-    2019/12/02 21:16:45 response time `warn`: 2s
-    2019/12/02 21:16:45 response time `error`: 3s
-    2019/12/02 21:16:45 response time check result: warn
-    2019/12/02 21:16:45 target: api.chucknorris.io
-    2019/12/02 21:16:45 header: api.chucknorris.io/jokes/random
-    2019/12/02 21:16:45 status: 200 OK
-    2019/12/02 21:16:45 status code: 200
-    2019/12/02 21:16:45 response time: 1.200297173s
-    2019/12/02 21:16:45 protocol: HTTP/2.0
-    2019/12/02 21:16:45 content length: -1
-    2019/12/02 21:16:45 checkHttp took 1.20051962s
-  
 ## gocheck w/ Arg's to check a redirect
 
     gocheck]$ go run gocheck.go -host youtube.com -httpOkStatusCodes=301,302 

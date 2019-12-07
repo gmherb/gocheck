@@ -273,21 +273,24 @@ func checkHTTP() {
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-// Check Network
+// Check NET function!
 func checkNET() {
 	defer timeTrack(time.Now(), "checkNet")
-	log.Println("check net to do includes dns, checks, portscan, connection tests, etc")
 
 	icmpCon, err := icmp.ListenPacket("udp4", "0.0.0.0")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer icmpCon.Close()
-	log.Println("ICMP Connection:*", *icmpCon)
-	log.Println("ICMP Connection:", icmpCon)
+	if *verbose {
+		log.Println("ICMP Connection:*", *icmpCon)
+		log.Println("ICMP Connection:", icmpCon)
+	}
 
 	icmpLocalAddr := icmpCon.LocalAddr()
-	log.Println("Local Addr:", icmpLocalAddr)
+	if *verbose {
+		log.Println("Local Addr:", icmpLocalAddr)
+	}
 
 	icmpMes := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
@@ -298,19 +301,26 @@ func checkNET() {
 			Data: []byte("PING-PONG-BONG-MONG"),
 		},
 	}
-	log.Println("ICMP Message:", icmpMes)
+
+	if *verbose {
+		log.Println("ICMP Message:", icmpMes)
+	}
 
 	icmpMesMar, err := icmpMes.Marshal(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("ICMP Message Marshal:", icmpMesMar)
+	if *verbose {
+		log.Println("ICMP Message Marshal:", icmpMesMar)
+	}
 
-	icmpPing, err := icmpCon.WriteTo(icmpMesMar, &net.UDPAddr{IP: net.ParseIP("8.8.8.8"), Port: 0})
+	icmpPing, err := icmpCon.WriteTo(icmpMesMar, &net.UDPAddr{IP: net.ParseIP(*host), Port: 0})
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("ICMP Ping:", icmpPing)
+	if *verbose {
+		log.Println("ICMP Ping:", icmpPing)
+	}
 
 	fluff := make([]byte, 1500)
 	n, target, err := icmpCon.ReadFrom(fluff)
@@ -321,11 +331,14 @@ func checkNET() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("ICMP Response:", icmpResponse)
+
+	if *verbose {
+		log.Println("ICMP Response:", icmpResponse)
+	}
 
 	switch icmpResponse.Type {
 	case ipv4.ICMPTypeEchoReply:
-		log.Printf("response received from %v", target)
+		log.Printf("ICMP response received from %v", target)
 	default:
 		log.Printf("%+v recieved from target", icmpResponse)
 	}
@@ -354,7 +367,6 @@ func main() {
 	case "http":
 		checkHTTP()
 	case "net":
-		log.Println("Could it be, that `net` mode is not done yet.!?")
 		checkNET()
 	}
 }

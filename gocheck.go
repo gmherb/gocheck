@@ -434,7 +434,6 @@ func checkNET() {
 
 		log.Println("TCP Connection Duration:", tcpEndTime)
 	}
-
 }
 
 func main() {

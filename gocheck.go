@@ -42,10 +42,13 @@ var httpWarnResponseTime = flag.String("httpWarnResponseTime", "2s", "warn time"
 var httpErrorResponseTime = flag.String("httpErrorResponseTime", "3s", "error time")
 
 // net mode flags
+var netIcmp = flag.Bool("netIcmp", true, "enable icmp check")
+var icmpTimeout = flag.String("icmpTimeout", "3s", "timeout for icmp check")
+var icmpCount = flag.Int("icmpCount", 1, "amount of icmp echos")
+
 var netTcp = flag.Bool("netTcp", false, "enable tcp check")
 var netPort = flag.String("netPort", "80", "port to connect to in tcp check")
-var netTimeout = flag.String("netTimeout", "3s", "timeout for net mode")
-var netCount = flag.Int("netCount", 1, "amount of icmp echos")
+var tcpTimeout = flag.String("tcpTimeout", "3s", "timeout for tcp check")
 
 // new type for httpStatusCodes, a slice of strings
 // to be used by OK, WARN, ERROR statements
@@ -283,142 +286,149 @@ func checkHTTP() {
 func checkNET() {
 	defer timeTrack(time.Now(), "checkNet")
 
-	// Set icmp Listener
-	icmpCon, err := icmp.ListenPacket("udp4", "0.0.0.0")
+	// DNS Resolve
+	netHost, err := net.LookupHost(*host)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer icmpCon.Close()
-	if *verbose {
-		log.Println("ICMP Connection:*", *icmpCon)
-		log.Println("ICMP Connection:", icmpCon)
-	}
+	log.Println("Host:", netHost)
 
-	icmpLocalAddr := icmpCon.LocalAddr()
-	if *verbose {
-		log.Println("Local Addr:", icmpLocalAddr)
-	}
+	if *netIcmp {
+		// Set icmp Listener
+		icmpCon, err := icmp.ListenPacket("udp4", "0.0.0.0")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer icmpCon.Close()
+		if *verbose {
+			log.Println("ICMP Connection:*", *icmpCon)
+			log.Println("ICMP Connection:", icmpCon)
+		}
 
-	// Prep ICMP Message
-	icmpMes := icmp.Message{
-		Type: ipv4.ICMPTypeEcho,
-		Code: 0,
-		Body: &icmp.Echo{
-			ID:   os.Getpid() & 0xffff,
-			Seq:  1,
-			Data: []byte("PING-PONG-BONG-MONG"),
-		},
-	}
-	if *verbose {
-		log.Println("ICMP Message:", icmpMes)
-	}
+		icmpLocalAddr := icmpCon.LocalAddr()
+		if *verbose {
+			log.Println("Local Addr:", icmpLocalAddr)
+		}
 
-	icmpMesMar, err := icmpMes.Marshal(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if *verbose {
-		log.Println("ICMP Message Marshal:", icmpMesMar)
-	}
+		// Prep ICMP Message
+		icmpMes := icmp.Message{
+			Type: ipv4.ICMPTypeEcho,
+			Code: 0,
+			Body: &icmp.Echo{
+				ID:   os.Getpid() & 0xffff,
+				Seq:  1,
+				Data: []byte("PING-PONG-BONG-MONG"),
+			},
+		}
+		if *verbose {
+			log.Println("ICMP Message:", icmpMes)
+		}
 
-	// make slice with make for icmp results
-	icmpResults := make([]time.Duration, *netCount)
-	log.Println("icmpResults", icmpResults)
-
-	// loop icmp
-	netIterate := 0
-	for netIterate < *netCount {
-
-		icmpPing, err := icmpCon.WriteTo(icmpMesMar, &net.UDPAddr{IP: net.ParseIP(*host), Port: 0})
+		icmpMesMar, err := icmpMes.Marshal(nil)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if *verbose {
-			log.Println("ICMP Ping:", icmpPing)
+			log.Println("ICMP Message Marshal:", icmpMesMar)
 		}
 
-		ito, err := time.ParseDuration(*netTimeout)
-		if err != nil {
-			log.Fatal(err)
-		}
-		icmpConTimeout := icmpCon.SetDeadline(time.Now().Add(ito))
-		if *verbose {
-			log.Println("ICMP Timeout:", icmpConTimeout)
+		// make slice with make for icmp results
+		icmpResults := make([]time.Duration, *icmpCount)
+
+		// loop icmp
+		netIterate := 0
+		for netIterate < *icmpCount {
+
+			icmpPing, err := icmpCon.WriteTo(icmpMesMar, &net.UDPAddr{IP: net.ParseIP(netHost[0]), Port: 0})
+			if err != nil {
+				log.Fatal(err)
+			}
+			if *verbose {
+				log.Println("ICMP Ping:", icmpPing)
+			}
+
+			icmpTimeout, err := time.ParseDuration(*icmpTimeout)
+			if err != nil {
+				log.Fatal(err)
+			}
+			icmpConTimeout := icmpCon.SetDeadline(time.Now().Add(icmpTimeout))
+			if *verbose {
+				log.Println("ICMP Timeout:", icmpConTimeout)
+			}
+
+			// make request and read from target, wrapping with Time for metrics
+			startTime := time.Now()
+
+			fluff := make([]byte, 1500)
+			n, target, err := icmpCon.ReadFrom(fluff)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println("ICMP Response:", n, target)
+
+			icmpResponse, err := icmp.ParseMessage(1, fluff[:n])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if *verbose {
+				log.Println("ICMP Response:", icmpResponse)
+			}
+
+			// Add time result to slice
+			icmpTime := time.Since(startTime)
+			icmpResults[netIterate] = icmpTime
+
+			// Result of icmp
+			switch icmpResponse.Type {
+			case ipv4.ICMPTypeEchoReply:
+				log.Println("ICMP response received from", target, "was", icmpResponse.Type)
+			default:
+				log.Println("ICMP response received from", target, "was", icmpResponse.Type)
+			}
+
+			// Add count to loop var
+			netIterate = netIterate + 1
 		}
 
-		// make request and read from target, wrapping with Time for metrics
-		startTime := time.Now()
+		log.Println("ICMP Results:", icmpResults)
 
-		fluff := make([]byte, 1500)
-		n, target, err := icmpCon.ReadFrom(fluff)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println("ICMP Response:", n, target)
-
-		icmpResponse, err := icmp.ParseMessage(1, fluff[:n])
-		if err != nil {
-			log.Fatal(err)
-		}
-		if *verbose {
-			log.Println("ICMP Response:", icmpResponse)
-		}
-
-		// Add time result to slice
-		icmpTime := time.Since(startTime)
-		icmpResults[netIterate] = icmpTime
-
-		// Result of icmp
-		switch icmpResponse.Type {
-		case ipv4.ICMPTypeEchoReply:
-			log.Println("ICMP response received from", target, "was", icmpResponse.Type)
-		default:
-			log.Println("ICMP response received from", target, "was", icmpResponse.Type)
-		}
-
-		// Add count to loop var
-		netIterate = netIterate + 1
+		// Close icmp listener <- this is not correct
+		icmpCon.Close()
 	}
-
-	log.Println("ICMP Results:", icmpResults)
-
-	// Close icmp listener <- this is not correct
-	icmpCon.Close()
 
 	// TCP Based Check
 	if *netTcp {
 
-		// Dns Resolve
-		tcpHost, err := net.LookupHost(*host)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println("Host:", tcpHost)
-
 		// Connection Host
-		connH := net.ParseIP(tcpHost[0])
-		log.Println("connH:", connH)
+		connH := net.ParseIP(netHost[0])
+		log.Println("TCP Host:", connH)
 
 		// Connection Port
 		connP := *netPort
-		log.Println("connP:", connP)
+		log.Println("TCP Port:", connP)
 
 		// Connection String
-		connS := net.JoinHostPort(tcpHost[0], *netPort)
-		log.Println("connS:", connS)
+		connS := net.JoinHostPort(netHost[0], *netPort)
+		log.Println("TCP Connection String:", connS)
+
+		// Connection Timeout
+		connT, err := time.ParseDuration(*tcpTimeout)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// TCP Connection using net.Dial and wrapping with Time for metrics
 		tcpStartTime := time.Now()
-		conn, err := net.Dial("tcp", connS)
-		tcpEndTime := time.Since(tcpStartTime)
+		conn, err := net.DialTimeout("tcp", connS, connT)
 		if err != nil {
 			log.Fatal(err) // handle error
 		}
+		tcpEndTime := time.Since(tcpStartTime)
 		if *verbose {
-			log.Println("Tcp Connection:", conn)
+			log.Println("TCP Connection:", conn)
 		}
 
-		log.Println("tcp time duration:", tcpEndTime)
+		log.Println("TCP Connection Duration:", tcpEndTime)
 	}
 
 }

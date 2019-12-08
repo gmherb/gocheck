@@ -47,7 +47,7 @@ var icmpTimeout = flag.String("icmpTimeout", "3s", "timeout for icmp check")
 var icmpCount = flag.Int("icmpCount", 1, "amount of icmp echos")
 
 var netTcp = flag.Bool("netTcp", false, "enable tcp check")
-var netPort = flag.String("netPort", "80", "port to connect to in tcp check")
+var tcpPort = flag.String("tcpPort", "80", "port to connect to in tcp check")
 var tcpTimeout = flag.String("tcpTimeout", "3s", "timeout for tcp check")
 
 // new type for httpStatusCodes, a slice of strings
@@ -364,7 +364,6 @@ func checkNET() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.Println("ICMP Response:", n, target)
 
 			icmpResponse, err := icmp.ParseMessage(1, fluff[:n])
 			if err != nil {
@@ -381,15 +380,20 @@ func checkNET() {
 			// Result of icmp
 			switch icmpResponse.Type {
 			case ipv4.ICMPTypeEchoReply:
-				log.Println("ICMP response received from", target, "was", icmpResponse.Type)
+				if *verbose {
+					log.Println("ICMP response received from", target, "was", icmpResponse.Type)
+				}
 			default:
-				log.Println("ICMP response received from", target, "was", icmpResponse.Type)
+				if *verbose {
+					log.Println("ICMP response received from", target, "was", icmpResponse.Type)
+				}
 			}
 
 			// Add count to loop var
 			netIterate = netIterate + 1
 		}
 
+		// Log icmp results
 		log.Println("ICMP Results:", icmpResults)
 
 		// Close icmp listener <- this is not correct
@@ -404,11 +408,11 @@ func checkNET() {
 		log.Println("TCP Host:", connH)
 
 		// Connection Port
-		connP := *netPort
+		connP := *tcpPort
 		log.Println("TCP Port:", connP)
 
 		// Connection String
-		connS := net.JoinHostPort(netHost[0], *netPort)
+		connS := net.JoinHostPort(netHost[0], *tcpPort)
 		log.Println("TCP Connection String:", connS)
 
 		// Connection Timeout
@@ -417,7 +421,7 @@ func checkNET() {
 			log.Fatal(err)
 		}
 
-		// TCP Connection using net.Dial and wrapping with Time for metrics
+		// TCP Connection using net.DialTimeout and wrapping with Time for metrics
 		tcpStartTime := time.Now()
 		conn, err := net.DialTimeout("tcp", connS, connT)
 		if err != nil {

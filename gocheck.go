@@ -26,29 +26,27 @@ import (
  */
 
 // main flags
-var subCmd = flag.String("subCmd", "http", "the subcommand")
+var subCmd = flag.String("cmd", "http", "http|net")
 var host = flag.String("host", "api.chucknorris.io", "target host")
-
-// optional flags
-var force = flag.Bool("force", false, "enable to overide prompts")
 var verbose = flag.Bool("verbose", false, "enable verbose mode")
 
 // http mode flags
-var header = flag.String("header", "", "target host header")
-var url = flag.String("url", "", "target host url")
-var follow = flag.Bool("follow", false, "follow redirects in http check")
-var httpOkResponseTime = flag.String("httpOkResponseTime", "1s", "ok time")
-var httpWarnResponseTime = flag.String("httpWarnResponseTime", "2s", "warn time")
-var httpErrorResponseTime = flag.String("httpErrorResponseTime", "3s", "error time")
+var header = flag.String("http-header", "", "target host header")
+var url = flag.String("http-url", "", "target host url")
+var follow = flag.Bool("http-follow", false, "follow http redirects")
+var httpOkResponseTime = flag.String("http-ok-response-time", "1s", "ok time")
+var httpWarnResponseTime = flag.String("http-warn-response-time", "2s", "warn time")
+var httpErrorResponseTime = flag.String("http-error-response-time", "3s", "error time")
 
-// net mode flags
-var netIcmp = flag.Bool("netIcmp", true, "enable icmp check")
-var icmpTimeout = flag.String("icmpTimeout", "3s", "timeout for icmp check")
-var icmpCount = flag.Int("icmpCount", 1, "amount of icmp echos")
+// net-icmp mode flags
+var netIcmp = flag.Bool("icmp", true, "enable icmp check")
+var icmpCount = flag.Int("icmp-count", 1, "amount of icmp echos")
+var icmpTimeout = flag.String("icmp-timeout", "3s", "timeout for icmp check")
 
-var netTcp = flag.Bool("netTcp", false, "enable tcp check")
-var tcpPort = flag.String("tcpPort", "80", "port to connect to in tcp check")
-var tcpTimeout = flag.String("tcpTimeout", "3s", "timeout for tcp check")
+// net-tcp mode flags
+var netTcp = flag.Bool("tcp", false, "enable tcp check")
+var tcpPort = flag.String("tcp-port", "80", "port to connect to in tcp check")
+var tcpTimeout = flag.String("tcp-timeout", "3s", "timeout for tcp check")
 
 // new type for httpStatusCodes, a slice of strings
 // to be used by OK, WARN, ERROR statements
@@ -439,19 +437,14 @@ func checkNET() {
 func main() {
 	// Parse variables that require new type to be defined
 	// Note to self: was unable to define directly into var, thus cannot be outside func
-	flag.Var(&httpOkStatusCodes, "httpOkStatusCodes", "http | status codes to `ok` on")
-	flag.Var(&httpWarnStatusCodes, "httpWarnStatusCodes", "http | status codes to `warn` on")
-	flag.Var(&httpErrorStatusCodes, "httpErrorStatusCodes", "http | status codes to `error` on")
+	flag.Var(&httpOkStatusCodes, "http-ok-status-codes", "http | status codes to `ok` on")
+	flag.Var(&httpWarnStatusCodes, "http-warn-status-codes", "http | status codes to `warn` on")
+	flag.Var(&httpErrorStatusCodes, "http-error-status-codes", "http | status codes to `error` on")
 
 	flag.Parse()
 
 	// showing user selected options
 	log.Println("Running '" + *subCmd + "' mode...")
-
-	// showing force was selected
-	if *force {
-		log.Println("force selected!")
-	}
 
 	// execute check
 	switch *subCmd {

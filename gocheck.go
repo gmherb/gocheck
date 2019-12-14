@@ -26,7 +26,7 @@ import (
  */
 
 // main flags
-var subCmd = flag.String("cmd", "http", "http|net|icmp")
+var subCmd = flag.String("cmd", "http", "http|tcp|icmp")
 var host = flag.String("host", "api.chucknorris.io", "target host")
 var verbose = flag.Bool("verbose", false, "enable verbose mode")
 
@@ -34,17 +34,20 @@ var verbose = flag.Bool("verbose", false, "enable verbose mode")
 var header = flag.String("http-header", "", "target host header")
 var url = flag.String("http-url", "", "target host url")
 var follow = flag.Bool("http-follow", false, "follow http redirects")
-var httpOkResponseTime = flag.String("http-ok-response-time", "1s", "ok time")
-var httpWarnResponseTime = flag.String("http-warn-response-time", "2s", "warn time")
-var httpErrorResponseTime = flag.String("http-error-response-time", "3s", "error time")
+var httpWarnResponseTime = flag.String("http-response-time-warn", "1s", "warn time")
+var httpErrorResponseTime = flag.String("http-response-time-error", "3s", "error time")
 
 // icmp mode flags
 var icmpCount = flag.Int("icmp-count", 1, "amount of icmp echos")
 var icmpTimeout = flag.String("icmp-timeout", "3s", "timeout for icmp check")
+var icmpWarnResponseTime = flag.String("icmp-response-time-warn", "1s", "warn time")
+var icmpErrorResponseTime = flag.String("icmp-response-time-error", "3s", "error time")
 
 // tcp mode flags
 var tcpPort = flag.String("tcp-port", "80", "port to connect to in tcp check")
 var tcpTimeout = flag.String("tcp-timeout", "3s", "timeout for tcp check")
+var tcpWarnResponseTime = flag.String("tcp-response-time-warn", "1s", "warn time")
+var tcpErrorResponseTime = flag.String("tcp-response-time-error", "3s", "error time")
 
 // new type for httpStatusCodes, a slice of strings
 // to be used by OK, WARN, ERROR statements
@@ -152,7 +155,7 @@ func checkHTTP() {
 		log.Fatalln(err)
 	}
 
-	// Start Status Code Check //
+	//*********** Start Status Code Check ***********//
 	// Check if httpStatusCodes were provided, otherwise set default.
 	if httpOkStatusCodes == nil {
 		if *verbose {
@@ -172,9 +175,7 @@ func checkHTTP() {
 		}
 		httpErrorStatusCodes = append(httpErrorStatusCodes, "500")
 	}
-	// End Status Code Check //
 
-	// Start Response Time Check //
 	// Convert response statusCode from int to string
 	statusCodeString := strconv.Itoa(resp.StatusCode)
 
@@ -194,26 +195,25 @@ func checkHTTP() {
 	} else {
 		httpCheckStatusCode = "unknown"
 	}
+	//*********** End Status Code Check ***********//
 
+	//*********** Start Response Time Check ***********//
 	// Set responseTime in Duration type to be compared
-	okResponseTime, _ := time.ParseDuration(*httpOkResponseTime)
 	warnResponseTime, _ := time.ParseDuration(*httpWarnResponseTime)
 	errorResponseTime, _ := time.ParseDuration(*httpErrorResponseTime)
 
 	// Perform response time comparison
 	var httpCheckResponseTime string
-	if respTime <= okResponseTime {
+	if respTime <= warnResponseTime {
 		httpCheckResponseTime = "ok"
-	} else if respTime <= warnResponseTime {
-		httpCheckResponseTime = "warn"
 	} else if respTime <= errorResponseTime {
-		httpCheckResponseTime = "err"
+		httpCheckResponseTime = "warn"
 	} else {
-		httpCheckResponseTime = "unknown"
+		httpCheckResponseTime = "err"
 	}
-	// End Response Time Check //
+	//*********** End Response Time Check ***********//
 
-	// Logging Below //
+	//*********** Logging Below ***********//
 	// Status Code Check
 	log.Println("status codes `ok`:", httpOkStatusCodes)
 	log.Println("status codes `warn`:", httpWarnStatusCodes)
@@ -223,7 +223,6 @@ func checkHTTP() {
 	log.Println("status:", resp.Status)
 
 	// Response Time Check
-	log.Println("response time `ok`:", okResponseTime)
 	log.Println("response time `warn`:", warnResponseTime)
 	log.Println("response time `error`:", errorResponseTime)
 	log.Println("response time check result:", httpCheckResponseTime)
@@ -406,6 +405,7 @@ func checkTCP(h string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("TCP Timeout:", connT)
 
 	// TCP Connection using net.DialTimeout and wrapping with Time for metrics
 	tcpStartTime := time.Now()
@@ -413,12 +413,35 @@ func checkTCP(h string) {
 	if err != nil {
 		log.Fatal(err) // handle error
 	}
+
 	tcpEndTime := time.Since(tcpStartTime)
 	if *verbose {
 		log.Println("TCP Connection:", conn)
 	}
-
 	log.Println("TCP Connection Duration:", tcpEndTime)
+
+	//*********** Start Response Time Check ***********//
+	// Set responseTime in Duration type to be compared
+	warnResponseTime, _ := time.ParseDuration(*tcpWarnResponseTime)
+	errorResponseTime, _ := time.ParseDuration(*tcpErrorResponseTime)
+
+	// Perform response time comparison
+	var tcpCheckResponseTime string
+	if tcpEndTime <= warnResponseTime {
+		tcpCheckResponseTime = "ok"
+	} else if tcpEndTime <= errorResponseTime {
+		tcpCheckResponseTime = "warn"
+	} else {
+		tcpCheckResponseTime = "err"
+	}
+	//*********** End Response Time Check ***********//
+
+	//*********** Logging Below ***********//
+	// Response Time Check
+	log.Println("response time `warn`:", warnResponseTime)
+	log.Println("response time `error`:", errorResponseTime)
+	log.Println("response time check result:", tcpCheckResponseTime)
+	log.Println("response time:", tcpEndTime)
 }
 
 func main() {

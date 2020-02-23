@@ -1,5 +1,5 @@
 # gocheck
-Check HTTP
+![Go](https://github.com/gmherb/gocheck/workflows/Go/badge.svg?branch=master)
 
 ## gocheck defaults
 	gocheck]$ go run gocheck.go

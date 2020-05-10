@@ -12,18 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thedevsaddam/gojsonq"
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
+	"github.com/thedevsaddam/gojsonq"
 )
-
-/*
-*  `-http` is selected by default
-*  $ gocheck [-http|-net] [options]
-*
-*  checking redirect works,
-*  $ gocheck --host follow youtube.com --httpOkStatusCode 301 --httpOkStatusCode 302
- */
 
 // main flags
 var subCmd = flag.String("cmd", "http", "http|tcp|icmp")
@@ -155,6 +147,7 @@ func checkHTTP() {
 		log.Fatalln(err)
 	}
 
+
 	//*********** Start Status Code Check ***********//
 	// Check if httpStatusCodes were provided, otherwise set default.
 	if httpOkStatusCodes == nil {
@@ -171,9 +164,8 @@ func checkHTTP() {
 	}
 	if httpErrorStatusCodes == nil {
 		if *verbose {
-			log.Println("no httpErrorStatusCode value was provided; set default to `500`")
+			log.Println("specific http error code was not provided, alerting on all non-ok/warn codes")
 		}
-		httpErrorStatusCodes = append(httpErrorStatusCodes, "500")
 	}
 
 	// Convert response statusCode from int to string
@@ -192,10 +184,14 @@ func checkHTTP() {
 		httpCheckStatusCode = "warn"
 	} else if strings.Contains(errorStatusCodeString, statusCodeString) {
 		httpCheckStatusCode = "err"
+	} else if len(errorStatusCodeString) == 0 {
+		httpCheckStatusCode = "unknown"
 	} else {
 		httpCheckStatusCode = "unknown"
 	}
-	//*********** End Status Code Check ***********//
+
+
+
 
 	//*********** Start Response Time Check ***********//
 	// Set responseTime in Duration type to be compared
@@ -211,7 +207,9 @@ func checkHTTP() {
 	} else {
 		httpCheckResponseTime = "err"
 	}
-	//*********** End Response Time Check ***********//
+
+
+
 
 	//*********** Logging Below ***********//
 	// Status Code Check
@@ -253,6 +251,8 @@ func checkHTTP() {
 	}
 
 }
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -323,8 +323,8 @@ func checkICMP(h net.IP) {
 	icmpResults := make([]time.Duration, *icmpCount)
 
 	// loop icmp
-	netIterate := 0
-	for netIterate < *icmpCount {
+	i := 0
+	for i < *icmpCount {
 
 		icmpPing, err := icmpCon.WriteTo(icmpMesMar, &net.UDPAddr{IP: net.IP(h), Port: 0})
 		if err != nil {
@@ -338,9 +338,16 @@ func checkICMP(h net.IP) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if *verbose {
+			log.Println("ICMP Timeout:", icmpTimeout)
+		}
+
+		// Set time in future to timeout
 		icmpConTimeout := icmpCon.SetDeadline(time.Now().Add(icmpTimeout))
 		if *verbose {
-			log.Println("ICMP Timeout:", icmpConTimeout)
+			log.Println("ICMP Conn Timeout:", icmpConTimeout)
+			log.Println("ICMP Warn Timeout:", *icmpWarnResponseTime)
+			log.Println("ICMP Error Timeout:", *icmpErrorResponseTime)
 		}
 
 		// make request and read from target, wrapping with Time for metrics
@@ -362,7 +369,11 @@ func checkICMP(h net.IP) {
 
 		// Add time result to slice
 		icmpTime := time.Since(startTime)
-		icmpResults[netIterate] = icmpTime
+		icmpResults[i] = icmpTime
+
+
+		// TODO - ADD response time check here
+
 
 		// Result of icmp
 		switch icmpResponse.Type {
@@ -377,7 +388,7 @@ func checkICMP(h net.IP) {
 		}
 
 		// Add count to loop var
-		netIterate = netIterate + 1
+		i = i + 1
 	}
 
 	// Log icmp results

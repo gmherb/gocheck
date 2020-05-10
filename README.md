@@ -77,7 +77,6 @@
     2020/05/10 11:41:15 checkTCP took 14.955198ms
     
 ## gocheck -cmd icmp
-    [manj gocheck]# go run gocheck.go -cmd icmp
     2020/05/10 11:34:26 Running 'icmp' mode...
     2020/05/10 11:34:26 Host Lookup: [104.28.12.58 104.28.13.58 2606:4700:3035::681c:d3a 2606:4700:3035::681c:c3a]
     2020/05/10 11:34:26 Host: 104.28.12.58

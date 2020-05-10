@@ -64,20 +64,18 @@
     2020/05/10 11:33:43 checkHTTP took 890.408309ms
     
 ## gocheck -cmd tcp
-    [manj gocheck]# go run gocheck.go -cmd tcp
-    2020/05/10 11:34:22 Running 'tcp' mode...
-    2020/05/10 11:34:22 Host Lookup: [104.28.13.58 104.28.12.58 2606:4700:3035::681c:c3a 2606:4700:3035::681c:d3a]
-    2020/05/10 11:34:22 Host: 104.28.13.58
-    2020/05/10 11:34:22 TCP Port: 80
-    2020/05/10 11:34:22 TCP Connection String: 104.28.13.58:80
-    2020/05/10 11:34:22 TCP Timeout: 3s
-    2020/05/10 11:34:22 TCP Connection Duration: 9.647254ms
-    2020/05/10 11:34:22 response time `warn`: 1s
-    2020/05/10 11:34:22 response time `error`: 3s
-    2020/05/10 11:34:22 response time check result: ok
-    2020/05/10 11:34:22 response time: 9.647254ms
-    2020/05/10 11:34:22 checkTCP took 9.694131ms
-
+    2020/05/10 11:41:15 Running 'tcp' mode...
+    2020/05/10 11:41:15 Host Lookup: [104.28.13.58 104.28.12.58 2606:4700:3035::681c:c3a 2606:4700:3035::681c:d3a]
+    2020/05/10 11:41:15 Host: 104.28.13.58
+    2020/05/10 11:41:15 TCP Port: 80
+    2020/05/10 11:41:15 TCP Connection String: 104.28.13.58:80
+    2020/05/10 11:41:15 TCP Timeout: 3s
+    2020/05/10 11:41:15 response time `warn`: 1s
+    2020/05/10 11:41:15 response time `error`: 3s
+    2020/05/10 11:41:15 response time check result: ok
+    2020/05/10 11:41:15 response time: 14.915503ms
+    2020/05/10 11:41:15 checkTCP took 14.955198ms
+    
 ## gocheck -cmd icmp
     [manj gocheck]# go run gocheck.go -cmd icmp
     2020/05/10 11:34:26 Running 'icmp' mode...

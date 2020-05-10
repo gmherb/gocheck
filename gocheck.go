@@ -418,6 +418,7 @@ func checkTCP(h string) {
 	}
 	log.Println("TCP Timeout:", connT)
 
+
 	// TCP Connection using net.DialTimeout and wrapping with Time for metrics
 	tcpStartTime := time.Now()
 	conn, err := net.DialTimeout("tcp", connS, connT)
@@ -429,7 +430,7 @@ func checkTCP(h string) {
 	if *verbose {
 		log.Println("TCP Connection:", conn)
 	}
-	log.Println("TCP Connection Duration:", tcpEndTime)
+
 
 	//*********** Start Response Time Check ***********//
 	// Set responseTime in Duration type to be compared
@@ -445,7 +446,7 @@ func checkTCP(h string) {
 	} else {
 		tcpCheckResponseTime = "err"
 	}
-	//*********** End Response Time Check ***********//
+
 
 	//*********** Logging Below ***********//
 	// Response Time Check
